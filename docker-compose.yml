@@ -1,0 +1,93 @@
+networks:
+  tg-rss-net:
+    driver: bridge
+    attachable: true
+
+volumes:
+  postgres-data:
+
+services:
+  backend:
+    image: ghcr.io/nrf24l01/tg_rss/backend:latest
+    build:
+      context: backend/
+      dockerfile: Dockerfile
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/ping"]
+      interval: 5s
+      retries: 30
+      timeout: 3s
+      start_period: 3s
+    restart: always
+    ports:
+      - "${DOCKER_BIND_IP}:2330:8000"
+    env_file:
+      - .env
+    environment:
+      - APP_HOST=:8000
+      - PG_HOST=postgres
+      - PG_USER=postgres
+      - PG_PASSWORD=helloTiver
+      - PG_DATABASE=postgres
+      - PG_PORT=5432
+      - PG_SSLMODE=disable
+      - PG_TIMEZONE=Europe/Moscow
+      - PRODUCTION_ENV=true
+      - NO_LOGS=true
+    depends_on:
+      parser:
+        condition: service_started
+    networks:
+      - tg-rss-net
+  
+  parser:
+    image: ghcr.io/nrf24l01/tg_rss/parser:latest
+    build:
+      context: parser/
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=helloTiver
+      - POSTGRES_DB=postgres
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./parser/session.session:/app/session.session
+    networks:
+      - tg-rss-net
+
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: helloTiver
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - tg-rss-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      retries: 5
+    command: ["postgres", "-c", "listen_addresses=*"]
+    restart: always
+  
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_POLL_INTERVAL=300
+      - DOCKER_CONFIG=/
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ~/.docker/config.json:/config.json
