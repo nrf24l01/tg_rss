@@ -2,8 +2,10 @@ package postgres
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
+	"github.com/gabriel-vasile/mimetype"
 	"github.com/google/uuid"
 	"github.com/nrf24l01/tg_rss/backend/schemas"
 )
@@ -21,10 +23,19 @@ type UserGroupMedia struct {
 func (UserGroupMedia) TableName() string { return "user_group_media" }
 
 func (u *UserGroupMedia) ToRSSSchema() *schemas.UserGroupMedia {
+	mediaType := "application/octet-stream"
+	if len(u.Media) > 0 {
+		if mt := mimetype.Detect(u.Media); mt != nil {
+			mediaType = mt.String()
+		}
+	}
+
 	return &schemas.UserGroupMedia{
 		ID:          u.ID.String(),
 		MediaLink:   fmt.Sprintf("/rss/img/%s", u.ID.String()),
 		Description: u.Description,
 		CreatedAt:   u.CreatedAt.Format(time.RFC3339),
+		MediaType:   mediaType,
+		MediaSize:   strconv.Itoa(len(u.Media)),
 	}
 }
