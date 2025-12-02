@@ -20,7 +20,7 @@ services:
       start_period: 3s
     restart: always
     ports:
-      - "${DOCKER_BIND_IP}:2330:8000"
+      - "${DOCKER_BIND_IP}:2331:8000"
     env_file:
       - .env
     environment:
