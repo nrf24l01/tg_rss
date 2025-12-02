@@ -59,7 +59,7 @@ func main() {
 
 	// Health check endpoint
 	e.GET("/ping", func(c echo.Context) error {
-	return c.JSON(200, schemas.Message{Status: "Matprak backend is ok"})
+	return c.JSON(200, schemas.Message{Status: "RSS backend is ok"})
 	})
 
 	// Register routes
