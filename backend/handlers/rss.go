@@ -14,10 +14,14 @@ import (
 
 func (h *Handler) RssHandler(c echo.Context) error {
 	var feeds []postgres.UserGroupMedia
-	if err := h.DB.Select("id, description, created_at, media").Find(&feeds).Error; err != nil {
-		log.Printf("Failed to fetch feeds: %v", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "Pupupu...")
-	}
+	if err := h.DB.
+        Select("id, description, created_at, media").
+        Order("created_at DESC").
+        Find(&feeds).Error; err != nil {
+
+        log.Printf("Failed to fetch feeds: %v", err)
+        return echo.NewHTTPError(http.StatusInternalServerError, "Pupupu...")
+    }
 	
 	var rssChemas []schemas.UserGroupMedia
 
