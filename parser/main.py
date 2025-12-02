@@ -27,7 +27,7 @@ async def init_db():
         logger.info("Database tables initialized successfully")
 
 
-async def save_media_to_db(conn, user_id, group_id, media_bytes, description, message_id):
+async def save_media_to_db(conn, user_id, group_id, media_bytes, description, message_id, created_at):
     """Save media to database with MESSAGES_LIMIT constraint"""
     try:
         # Check if message already exists
@@ -44,8 +44,8 @@ async def save_media_to_db(conn, user_id, group_id, media_bytes, description, me
             await conn.execute(DELETE_OLDEST, user_id, group_id)
             logger.info(f"Deleted oldest record for user {user_id}, group {group_id}")
         
-        # Insert new media record
-        record_id = await conn.fetchval(INSERT_MEDIA, user_id, group_id, media_bytes, description, message_id)
+        # Insert new media record, pass created_at (message send datetime)
+        record_id = await conn.fetchval(INSERT_MEDIA, user_id, group_id, media_bytes, description, message_id, created_at)
         logger.info(f"Saved media {record_id} for user {user_id}, group {group_id}")
         
     except Exception as e:
@@ -123,13 +123,16 @@ async def parse_and_save_media(entity, entity_id, is_user=False):
                     
                     # Save to database
                     async with db_pool.acquire() as conn:
+                        # message.date is the send time (a datetime). Pass it as created_at so
+                        # the DB stores the actual send time instead of insertion time.
                         await save_media_to_db(
-                            conn, 
-                            user_id, 
-                            group_id, 
-                            media_bytes, 
-                            description, 
-                            message.id
+                            conn,
+                            user_id,
+                            group_id,
+                            media_bytes,
+                            description,
+                            message.id,
+                            message.date
                         )
                     
                     messages_count += 1

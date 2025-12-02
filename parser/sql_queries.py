@@ -18,9 +18,10 @@ CREATE INDEX IF NOT EXISTS idx_user_group_media_created_at ON user_group_media(c
 """
 
 # Insert media record
+# Now includes created_at so callers can set the message send datetime explicitly.
 INSERT_MEDIA = """
-INSERT INTO user_group_media (user_id, group_id, media, description, message_id)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO user_group_media (user_id, group_id, media, description, message_id, created_at)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING id;
 """
 
