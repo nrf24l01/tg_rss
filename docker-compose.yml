@@ -80,14 +80,3 @@ services:
       retries: 5
     command: ["postgres", "-c", "listen_addresses=*"]
     restart: always
-  
-  watchtower:
-    image: containrrr/watchtower
-    restart: unless-stopped
-    environment:
-      - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_POLL_INTERVAL=300
-      - DOCKER_CONFIG=/
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - ~/.docker/config.json:/config.json
